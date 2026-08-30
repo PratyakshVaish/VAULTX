@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAULTX — Bold Zero-Trust File Transfer</title>
+    <!-- Google Fonts: Inter Tight & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="navbar">
+        <div class="logo">
+            <i class="fa-solid fa-shield-halved logo-icon"></i>
+            <span>VAULT<span class="accent">X</span></span>
+            <span class="badge-security">AES-256-GCM / RSA-2048</span>
+        </div>
+        
+        <div id="user-info" class="user-info hidden">
+            <span class="user-badge"><i class="fa-solid fa-user-shield"></i> ID: <strong id="username-display">USER</strong></span>
+            <button id="toggle-inspector-btn" class="btn btn-secondary btn-sm" onclick="toggleInspector()">
+                <i class="fa-solid fa-microchip"></i> CRYPTO INSPECTOR
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i> LOGOUT
+            </button>
+        </div>
+    </header>
+
+    <main class="container">
+        
+        <!-- Auth Section (Login / Register) -->
+        <section id="auth-section" class="auth-wrapper">
+            <div class="card auth-card">
+                <div class="accent-bar"></div>
+                <div class="auth-header">
+                    <h2>ZERO-TRUST PORTAL.</h2>
+                    <p class="subtitle">End-to-end encrypted user file exchange system.</p>
+                </div>
+
+                <div class="tab-buttons">
+                    <button id="tab-login" class="tab-btn active" onclick="switchAuthTab('login')">01 // LOGIN</button>
+                    <button id="tab-register" class="tab-btn" onclick="switchAuthTab('register')">02 // REGISTER RSA KEY</button>
+                </div>
+
+                <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+                    <div class="input-group">
+                        <label>USERNAME</label>
+                        <input type="text" id="auth-username" required placeholder="Enter username (e.g. Alice)...">
+                    </div>
+
+                    <div class="input-group">
+                        <label>PASSWORD</label>
+                        <input type="password" id="auth-password" required placeholder="Enter password...">
+                    </div>
+
+                    <div id="auth-notice" class="auth-notice hidden">
+                        [CRYPTO NOTICE] Registration generates a 2048-bit RSA Keypair bound to your identity.
+                    </div>
+
+                    <div id="auth-error" class="alert alert-danger hidden"></div>
+
+                    <button type="submit" id="auth-submit-btn" class="btn btn-block-primary">
+                        AUTHENTICATE & ENTER &rarr;
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Main Dashboard Section -->
+        <section id="dashboard-section" class="dashboard-wrapper hidden">
+            
+            <!-- Dashboard Navigation -->
+            <div class="dashboard-header">
+                <div class="nav-tabs">
+                    <button class="dash-tab active" onclick="switchDashTab('files')">
+                        01 // ENCRYPTED VAULT
+                    </button>
+                    <button class="dash-tab" onclick="switchDashTab('upload')">
+                        02 // ENCRYPT & SEND
+                    </button>
+                    <button class="dash-tab" onclick="switchDashTab('audit')">
+                        03 // AUDIT TRAIL
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 1: Files Vault -->
+            <div id="tab-content-files" class="tab-content">
+                <div class="card">
+                    <div class="accent-bar"></div>
+                    <div class="card-header">
+                        <div>
+                            <h2>ENCRYPTED FILE VAULT.</h2>
+                            <p class="subtitle">Ciphertext payloads secured with RSA wrapped AES-256 keys.</p>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="loadFiles()">
+                            REFRESH VAULT
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th>FILE METADATA</th>
+                                    <th>SENDER</th>
+                                    <th>RECIPIENT</th>
+                                    <th>SIZE</th>
+                                    <th>IV NONCE</th>
+                                    <th>TIMESTAMP</th>
+                                    <th>ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="files-table-body">
+                                <tr>
+                                    <td colspan="7" class="text-center">FETCHING ENCRYPTED FILE RECORDS...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Upload File -->
+            <div id="tab-content-upload" class="tab-content hidden">
+                <div class="card upload-card">
+                    <div class="accent-bar"></div>
+                    <h2>ENCRYPT & SHARE FILE.</h2>
+                    <p class="subtitle">Payload encrypted via <strong>AES-256-GCM</strong>. Symmetric AES key wrapped with <strong>Recipient's RSA-2048 Public Key</strong>.</p>
+
+                    <form id="upload-form" onsubmit="handleFileUpload(event)" style="margin-top:2rem;">
+                        
+                        <div class="input-group">
+                            <label>TARGET RECIPIENT USER</label>
+                            <select id="recipient-select" class="custom-select" required>
+                                <option value="">Loading registered users...</option>
+                            </select>
+                        </div>
+
+                        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                            <i class="fa-solid fa-lock drop-icon"></i>
+                            <p id="drop-zone-text">DRAG & DROP FILE HERE OR <span>SELECT FILE</span></p>
+                            <input type="file" id="file-input" class="hidden" onchange="updateSelectedFile()">
+                        </div>
+
+                        <div id="file-details" class="file-details hidden">
+                            <i class="fa-solid fa-file-code"></i>
+                            <span id="selected-filename">sample.pdf</span>
+                            <span id="selected-filesize" class="badge">0 KB</span>
+                        </div>
+
+                        <div id="upload-progress-container" class="progress-container hidden">
+                            <div class="progress-bar" id="upload-progress-bar"></div>
+                            <span id="upload-status-text">ENCRYPTING PAYLOAD WITH AES-256-GCM...</span>
+                        </div>
+
+                        <button type="submit" id="upload-btn" class="btn btn-block-primary" disabled style="margin-top:1.5rem;">
+                            EXECUTE ENCRYPTED TRANSFER &rarr;
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tab 3: Security Audit Logs -->
+            <div id="tab-content-audit" class="tab-content hidden">
+                <div class="card">
+                    <div class="accent-bar"></div>
+                    <div class="card-header">
+                        <div>
+                            <h2>SECURITY AUDIT LOG.</h2>
+                            <p class="subtitle">Immutable ledger of cryptographic transfers and access operations.</p>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="loadAuditLogs()">
+                            REFRESH LOGS
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th>TIMESTAMP</th>
+                                    <th>ACTOR</th>
+                                    <th>FILE TARGET</th>
+                                    <th>OPERATION</th>
+                                    <th>RESULT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audit-table-body">
+                                <tr>
+                                    <td colspan="5" class="text-center">FETCHING AUDIT LOGS...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Cryptography Inspector Drawer -->
+        <aside id="inspector-drawer" class="inspector-drawer hidden">
+            <div class="inspector-header">
+                <h3>CRYPTO INSPECTOR</h3>
+                <button class="close-btn" onclick="toggleInspector()">&times;</button>
+            </div>
+            <div class="inspector-body">
+                <div class="crypto-step">
+                    <h4>01 // RSA-2048 PUBLIC KEY</h4>
+                    <p class="crypto-desc">Recipient's asymmetric key used to wrap file AES key.</p>
+                    <textarea id="inspect-public-key" readonly class="code-box" rows="5">Select file or user to inspect RSA key...</textarea>
+                </div>
+
+                <div class="crypto-step">
+                    <h4>02 // SYMMETRIC AES-256-GCM KEY</h4>
+                    <p class="crypto-desc">256-bit AES key generated per file operation.</p>
+                    <div id="inspect-aes-status" class="status-box">STATUS: CIPHER ENGINE READY</div>
+                </div>
+
+                <div class="crypto-step">
+                    <h4>03 // 12-BYTE (96-BIT) IV NONCE</h4>
+                    <p class="crypto-desc">Random Initialization Vector guaranteeing ciphertext uniqueness.</p>
+                    <div id="inspect-iv-val" class="code-box">--</div>
+                </div>
+
+                <div class="crypto-step">
+                    <h4>04 // GCM AUTH TAG (128-BIT)</h4>
+                    <p class="crypto-desc">Integrity tag guaranteeing anti-tampering verification.</p>
+                    <div id="inspect-tag-status" class="status-box">VERIFIED: AUTHENTICATED</div>
+                </div>
+            </div>
+        </aside>
+
+    </main>
+
+    <footer class="footer">
+        VAULTX &bull; BOLD TYPOGRAPHY ZERO-TRUST FILE TRANSFER &bull; AES-256-GCM + RSA-2048
+    </footer>
+
+    <script src="js/crypto-visualizer.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
