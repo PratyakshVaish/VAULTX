@@ -1,0 +1,35 @@
+services:
+  # Backend Web Service (Spring Boot 3 / Java 21 via Docker)
+  - type: web
+    name: vaultx-backend
+    env: docker
+    context: ./backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: vaultx-db
+          property: connectionString
+      - key: FILE_UPLOAD_DIR
+        value: /tmp/uploads
+      - key: JWT_SECRET
+        generateValue: true
+
+  # Frontend Static Site
+  - type: web
+    name: vaultx-frontend
+    env: static
+    buildCommand: ""
+    staticPublishPath: ./frontend/src
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://vaultx-backend.onrender.com/api/*
+
+databases:
+  # Render Managed PostgreSQL Database
+  - name: vaultx-db
+    plan: free
+    databaseName: securefiledb
+    user: fileuser
