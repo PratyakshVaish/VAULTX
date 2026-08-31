@@ -1,50 +1,22 @@
 // Main Frontend SPA Application Logic (Bold Typography System)
 
-// Backend URL auto-discovery state
+// Instant backend URL resolution for Localhost & Render deployments
 let API_BASE = '/api';
 
-// Candidate backend URLs to discover active Render backend
-async function autoDiscoverBackend() {
-    const candidates = [];
-
-    if (window.location.hostname.endsWith('onrender.com')) {
-        const parts = window.location.hostname.split('.');
-        const hostName = parts[0];
-        const backendHost = hostName.replace('frontend', 'backend');
-
-        candidates.push(`https://${backendHost}.onrender.com/api`);
-        candidates.push(`https://vaultx-backend.onrender.com/api`);
-        candidates.push(`https://vaultx-backend-g0le.onrender.com/api`);
-    }
-
-    candidates.push('/api');
-
-    for (const url of candidates) {
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 2000);
-            const res = await fetch(url + '/health', { signal: controller.signal });
-            clearTimeout(timeoutId);
-
-            if (res.ok) {
-                API_BASE = url;
-                console.log(">>> VaultX Backend Discovered & Active at:", API_BASE);
-                return;
-            }
-        } catch (e) {
-            // Try next candidate
-        }
-    }
+if (window.location.hostname.endsWith('onrender.com')) {
+    const parts = window.location.hostname.split('.');
+    const hostSubdomain = parts[0]; // e.g. vaultx-frontend or vaultx-frontend-g0le
+    
+    // Derive corresponding backend service name
+    const backendSubdomain = hostSubdomain.replace('frontend', 'backend');
+    API_BASE = `https://${backendSubdomain}.onrender.com/api`;
+    console.log("VaultX Render API Target:", API_BASE);
 }
-
-// Auto-discover backend on script load
-autoDiscoverBackend();
 
 let authMode = 'login'; // 'login' or 'register'
 let selectedFile = null;
 
-document.addEventListener('DOMContentLoaded', async () => {
-    await autoDiscoverBackend();
+document.addEventListener('DOMContentLoaded', () => {
     checkAuthState();
 });
 
@@ -135,9 +107,6 @@ async function handleAuthSubmit(event) {
         submitBtn.disabled = true;
     }
 
-    // Ensure backend target is discovered before submitting
-    await autoDiscoverBackend();
-
     const endpoint = authMode === 'register' ? '/auth/register' : '/auth/login';
 
     try {
@@ -162,7 +131,7 @@ async function handleAuthSubmit(event) {
         if (errorEl) {
             let msg = err.message || 'Authentication error';
             if (msg.toLowerCase().includes('failed to fetch')) {
-                msg = `Connecting to cloud backend at ${API_BASE}... Please retry in 10s if backend is waking up on free tier.`;
+                msg = `CANNOT CONNECT TO BACKEND AT ${API_BASE}. PLEASE RE-TRY IN 15 SECONDS WHILE RENDER WAKES UP.`;
             }
             errorEl.innerText = msg.toUpperCase();
             errorEl.classList.remove('hidden');
@@ -434,7 +403,7 @@ async function loadAuditLogs() {
                 <td><span class="code-snippet">${escapeHtml(log.username.toUpperCase())}</span></td>
                 <td><strong>${escapeHtml(log.filename)}</strong></td>
                 <td><span class="badge ${log.action === 'SEND_FILE' ? 'badge-info' : 'badge-success'}">${log.action}</span></td>
-                <td><span class="badge ${log.status === 'SUCCESS' ? 'badge-status' : 'badge-danger'}">${log.status}</span></td>
+                <td><span class="badge ${log.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}">${log.status}</span></td>
             </tr>
         `).join('');
 
