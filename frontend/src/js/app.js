@@ -1,20 +1,50 @@
 // Main Frontend SPA Application Logic (Bold Typography System)
 
-// Synchronously compute backend API URL for Render or Localhost
+// Backend URL auto-discovery state
 let API_BASE = '/api';
 
-if (window.location.hostname.endsWith('onrender.com')) {
-    const parts = window.location.hostname.split('.');
-    const hostName = parts[0];
-    const backendHost = hostName.replace('frontend', 'backend');
-    API_BASE = `https://${backendHost}.onrender.com/api`;
-    console.log("VaultX Render Backend Target:", API_BASE);
+// Candidate backend URLs to discover active Render backend
+async function autoDiscoverBackend() {
+    const candidates = [];
+
+    if (window.location.hostname.endsWith('onrender.com')) {
+        const parts = window.location.hostname.split('.');
+        const hostName = parts[0];
+        const backendHost = hostName.replace('frontend', 'backend');
+
+        candidates.push(`https://${backendHost}.onrender.com/api`);
+        candidates.push(`https://vaultx-backend.onrender.com/api`);
+        candidates.push(`https://vaultx-backend-g0le.onrender.com/api`);
+    }
+
+    candidates.push('/api');
+
+    for (const url of candidates) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
+            const res = await fetch(url + '/health', { signal: controller.signal });
+            clearTimeout(timeoutId);
+
+            if (res.ok) {
+                API_BASE = url;
+                console.log(">>> VaultX Backend Discovered & Active at:", API_BASE);
+                return;
+            }
+        } catch (e) {
+            // Try next candidate
+        }
+    }
 }
+
+// Auto-discover backend on script load
+autoDiscoverBackend();
 
 let authMode = 'login'; // 'login' or 'register'
 let selectedFile = null;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await autoDiscoverBackend();
     checkAuthState();
 });
 
@@ -105,6 +135,9 @@ async function handleAuthSubmit(event) {
         submitBtn.disabled = true;
     }
 
+    // Ensure backend target is discovered before submitting
+    await autoDiscoverBackend();
+
     const endpoint = authMode === 'register' ? '/auth/register' : '/auth/login';
 
     try {
@@ -127,7 +160,11 @@ async function handleAuthSubmit(event) {
         checkAuthState();
     } catch (err) {
         if (errorEl) {
-            errorEl.innerText = (err.message || 'Authentication error').toUpperCase();
+            let msg = err.message || 'Authentication error';
+            if (msg.toLowerCase().includes('failed to fetch')) {
+                msg = `Connecting to cloud backend at ${API_BASE}... Please retry in 10s if backend is waking up on free tier.`;
+            }
+            errorEl.innerText = msg.toUpperCase();
             errorEl.classList.remove('hidden');
         } else {
             alert("Auth Error: " + err.message);
@@ -397,7 +434,7 @@ async function loadAuditLogs() {
                 <td><span class="code-snippet">${escapeHtml(log.username.toUpperCase())}</span></td>
                 <td><strong>${escapeHtml(log.filename)}</strong></td>
                 <td><span class="badge ${log.action === 'SEND_FILE' ? 'badge-info' : 'badge-success'}">${log.action}</span></td>
-                <td><span class="badge ${log.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}">${log.status}</span></td>
+                <td><span class="badge ${log.status === 'SUCCESS' ? 'badge-status' : 'badge-danger'}">${log.status}</span></td>
             </tr>
         `).join('');
 
