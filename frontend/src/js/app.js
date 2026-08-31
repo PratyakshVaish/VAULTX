@@ -1,18 +1,32 @@
 // Main Frontend SPA Application Logic (Bold Typography System)
 
-// Instant backend URL resolution for Localhost & Render deployments
+// Backend API target initialization
 let API_BASE = '/api';
 
 if (window.location.hostname.endsWith('onrender.com')) {
-    // Exact Render backend web service URL
     API_BASE = 'https://vaultx-backend.onrender.com/api';
-    console.log("VaultX Render API Target:", API_BASE);
+}
+
+// Allow stored or custom API override
+const savedApi = localStorage.getItem('vault_api_base');
+if (savedApi) {
+    API_BASE = savedApi;
+}
+
+function setCustomApiUrl(val) {
+    if (val && val.trim()) {
+        API_BASE = val.trim();
+        localStorage.setItem('vault_api_base', API_BASE);
+        console.log("Updated API Target:", API_BASE);
+    }
 }
 
 let authMode = 'login'; // 'login' or 'register'
 let selectedFile = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('api-url-input');
+    if (input) input.value = API_BASE;
     checkAuthState();
 });
 
@@ -127,7 +141,7 @@ async function handleAuthSubmit(event) {
         if (errorEl) {
             let msg = err.message || 'Authentication error';
             if (msg.toLowerCase().includes('failed to fetch')) {
-                msg = `CANNOT CONNECT TO BACKEND AT ${API_BASE}. PLEASE RE-TRY IN 15 SECONDS WHILE RENDER WAKES UP.`;
+                msg = `CANNOT CONNECT TO ${API_BASE}. PLEASE RE-TRY IN 15 SECONDS WHILE RENDER WAKES UP.`;
             }
             errorEl.innerText = msg.toUpperCase();
             errorEl.classList.remove('hidden');

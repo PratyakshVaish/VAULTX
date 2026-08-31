@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/styles.css?v=1.0.2">
+    <link rel="stylesheet" href="css/styles.css?v=1.0.3">
 </head>
 <body>
 
@@ -69,6 +69,11 @@
                     <button type="submit" id="auth-submit-btn" class="btn btn-block-primary">
                         AUTHENTICATE & ENTER &rarr;
                     </button>
+
+                    <div class="input-group" style="margin-top:2rem; border-top:1px solid var(--border); padding-top:1rem;">
+                        <label style="font-size:0.7rem; color:var(--muted-foreground);">API SERVER ENDPOINT</label>
+                        <input type="text" id="api-url-input" style="font-family:var(--font-mono); font-size:0.75rem; height:2.4rem;" onchange="setCustomApiUrl(this.value)">
+                    </div>
                 </form>
             </div>
         </section>
@@ -244,7 +249,7 @@
         VAULTX &bull; BOLD TYPOGRAPHY ZERO-TRUST FILE TRANSFER &bull; AES-256-GCM + RSA-2048
     </footer>
 
-    <script src="js/crypto-visualizer.js?v=1.0.2"></script>
-    <script src="js/app.js?v=1.0.2"></script>
+    <script src="js/crypto-visualizer.js?v=1.0.3"></script>
+    <script src="js/app.js?v=1.0.3"></script>
 </body>
 </html>
