@@ -4,7 +4,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://vaultx-backend.onrender.com/api/:path*"
+      "destination": "https://vaultx-backend-1.onrender.com/api/:path*"
     }
   ]
 }
