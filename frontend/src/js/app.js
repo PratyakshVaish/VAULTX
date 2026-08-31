@@ -4,12 +4,8 @@
 let API_BASE = '/api';
 
 if (window.location.hostname.endsWith('onrender.com')) {
-    const parts = window.location.hostname.split('.');
-    const hostSubdomain = parts[0]; // e.g. vaultx-frontend or vaultx-frontend-g0le
-    
-    // Derive corresponding backend service name
-    const backendSubdomain = hostSubdomain.replace('frontend', 'backend');
-    API_BASE = `https://${backendSubdomain}.onrender.com/api`;
+    // Exact Render backend web service URL
+    API_BASE = 'https://vaultx-backend.onrender.com/api';
     console.log("VaultX Render API Target:", API_BASE);
 }
 
@@ -403,7 +399,7 @@ async function loadAuditLogs() {
                 <td><span class="code-snippet">${escapeHtml(log.username.toUpperCase())}</span></td>
                 <td><strong>${escapeHtml(log.filename)}</strong></td>
                 <td><span class="badge ${log.action === 'SEND_FILE' ? 'badge-info' : 'badge-success'}">${log.action}</span></td>
-                <td><span class="badge ${log.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}">${log.status}</span></td>
+                <td><span class="badge ${log.status === 'SUCCESS' ? 'badge-status' : 'badge-danger'}">${log.status}</span></td>
             </tr>
         `).join('');
 
