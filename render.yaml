@@ -15,16 +15,16 @@ services:
         fromDatabase:
           name: vaultx-db
           property: port
-      - key: SPRING_DATASOURCE_URL
-        value: jdbc:postgresql://${DB_HOST}:${DB_PORT}/securefiledb
-      - key: SPRING_DATASOURCE_USERNAME
+      - key: DB_USER
         fromDatabase:
           name: vaultx-db
           property: user
-      - key: SPRING_DATASOURCE_PASSWORD
+      - key: DB_PASSWORD
         fromDatabase:
           name: vaultx-db
           property: password
+      - key: DB_NAME
+        value: securefiledb
       - key: FILE_UPLOAD_DIR
         value: /tmp/uploads
       - key: JWT_SECRET

@@ -5,9 +5,9 @@ spring:
   application:
     name: secure-file-system
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/securefiledb}
-    username: ${SPRING_DATASOURCE_USERNAME:fileuser}
-    password: ${SPRING_DATASOURCE_PASSWORD:filepassword}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:securefiledb}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:fileuser}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:filepassword}}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
