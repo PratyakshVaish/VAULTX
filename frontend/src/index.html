@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/styles.css?v=1.0.5">
+    <link rel="stylesheet" href="css/styles.css?v=1.0.6">
 </head>
 <body>
 
@@ -49,15 +49,15 @@
                     <button id="tab-register" class="tab-btn" onclick="switchAuthTab('register')">02 // REGISTER RSA KEY</button>
                 </div>
 
-                <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+                <div id="auth-form-container">
                     <div class="input-group">
                         <label>USERNAME</label>
-                        <input type="text" id="auth-username" required placeholder="Enter username (e.g. Alice)...">
+                        <input type="text" id="auth-username" placeholder="Enter username (e.g. Alice)...">
                     </div>
 
                     <div class="input-group">
                         <label>PASSWORD</label>
-                        <input type="password" id="auth-password" required placeholder="Enter password...">
+                        <input type="password" id="auth-password" placeholder="Enter password...">
                     </div>
 
                     <div id="auth-notice" class="auth-notice hidden">
@@ -66,7 +66,7 @@
 
                     <div id="auth-error" class="alert alert-danger hidden"></div>
 
-                    <button type="submit" id="auth-submit-btn" class="btn btn-block-primary">
+                    <button type="button" id="auth-submit-btn" class="btn btn-block-primary" onclick="submitAuthForm()">
                         AUTHENTICATE & ENTER &rarr;
                     </button>
 
@@ -74,7 +74,7 @@
                         <label style="font-size:0.7rem; color:var(--muted-foreground);">API SERVER ENDPOINT</label>
                         <input type="text" id="api-url-input" style="font-family:var(--font-mono); font-size:0.75rem; height:2.4rem;" onchange="setCustomApiUrl(this.value)">
                     </div>
-                </form>
+                </div>
             </div>
         </section>
 
@@ -249,7 +249,7 @@
         VAULTX &bull; BOLD TYPOGRAPHY ZERO-TRUST FILE TRANSFER &bull; AES-256-GCM + RSA-2048
     </footer>
 
-    <script src="js/crypto-visualizer.js?v=1.0.5"></script>
-    <script src="js/app.js?v=1.0.5"></script>
+    <script src="js/crypto-visualizer.js?v=1.0.6"></script>
+    <script src="js/app.js?v=1.0.6"></script>
 </body>
 </html>

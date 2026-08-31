@@ -101,13 +101,24 @@ function switchAuthTab(mode) {
     }
 }
 
-// Handle Auth Form Submission
-async function handleAuthSubmit(event) {
-    event.preventDefault();
+// Direct Auth Form Submission Handler (Triggered by Button Click)
+async function submitAuthForm() {
+    console.log("Auth Submit Triggered. Mode:", authMode, "Target URL:", API_BASE);
+
     const usernameInput = document.getElementById('auth-username').value.trim();
     const passwordInput = document.getElementById('auth-password').value.trim();
     const errorEl = document.getElementById('auth-error');
     const submitBtn = document.getElementById('auth-submit-btn');
+
+    if (!usernameInput || !passwordInput) {
+        if (errorEl) {
+            errorEl.innerText = "PLEASE ENTER BOTH USERNAME AND PASSWORD.";
+            errorEl.classList.remove('hidden');
+        } else {
+            alert("Please enter both username and password.");
+        }
+        return;
+    }
 
     if (errorEl) errorEl.classList.add('hidden');
 
@@ -138,6 +149,7 @@ async function handleAuthSubmit(event) {
 
         checkAuthState();
     } catch (err) {
+        console.error("Auth Submission Exception:", err);
         if (errorEl) {
             let msg = err.message || 'Authentication error';
             if (msg.toLowerCase().includes('failed to fetch')) {
@@ -154,6 +166,12 @@ async function handleAuthSubmit(event) {
             submitBtn.disabled = false;
         }
     }
+}
+
+// Backward compatibility wrapper
+function handleAuthSubmit(event) {
+    if (event) event.preventDefault();
+    submitAuthForm();
 }
 
 // Logout
