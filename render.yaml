@@ -7,8 +7,16 @@ services:
     dockerfilePath: ./backend/Dockerfile
     plan: free
     envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: vaultx-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: vaultx-db
+          property: port
       - key: SPRING_DATASOURCE_URL
-        value: jdbc:postgresql://vaultx-db:5432/securefiledb
+        value: jdbc:postgresql://${DB_HOST}:${DB_PORT}/securefiledb
       - key: SPRING_DATASOURCE_USERNAME
         fromDatabase:
           name: vaultx-db
