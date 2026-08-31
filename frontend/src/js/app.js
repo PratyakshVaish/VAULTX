@@ -105,7 +105,7 @@ function switchAuthTab(mode) {
     }
 }
 
-// Direct Auth Form Submission Handler (Triggered by Button Click)
+// Direct Auth Form Submission Handler with Automatic Render Free-Tier Wake-Up Retry Loop
 async function submitAuthForm() {
     console.log("Auth Submit Triggered. Mode:", authMode, "Target URL:", API_BASE);
 
@@ -127,48 +127,77 @@ async function submitAuthForm() {
     if (errorEl) errorEl.classList.add('hidden');
 
     const originalBtnText = submitBtn ? submitBtn.innerText : '';
-    if (submitBtn) {
-        submitBtn.innerText = 'GENERATING CRYPTO KEYS & AUTHENTICATING...';
-        submitBtn.disabled = true;
-    }
-
     const endpoint = authMode === 'register' ? '/auth/register' : '/auth/login';
 
-    try {
-        const response = await fetch(API_BASE + endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: usernameInput, password: passwordInput })
-        });
+    const maxRetries = 5;
+    let attempt = 0;
+    let success = false;
+    let response = null;
 
-        if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(errText || 'Authentication failed');
-        }
-
-        const data = await response.json();
-        localStorage.setItem('vault_token', data.token);
-        localStorage.setItem('vault_username', data.username);
-        localStorage.setItem('vault_pubkey', data.publicKey);
-
-        checkAuthState();
-    } catch (err) {
-        console.error("Auth Submission Exception:", err);
-        if (errorEl) {
-            let msg = err.message || 'Authentication error';
-            if (msg.toLowerCase().includes('failed to fetch')) {
-                msg = `CANNOT CONNECT TO BACKEND AT ${API_BASE}. PLEASE OPEN ${API_BASE}/health IN YOUR BROWSER ONCE TO WAKE IT UP.`;
-            }
-            errorEl.innerText = msg.toUpperCase();
-            errorEl.classList.remove('hidden');
-        } else {
-            alert("Auth Error: " + err.message);
-        }
-    } finally {
+    while (attempt < maxRetries && !success) {
+        attempt++;
         if (submitBtn) {
-            submitBtn.innerText = originalBtnText;
-            submitBtn.disabled = false;
+            submitBtn.disabled = true;
+            if (attempt === 1) {
+                submitBtn.innerText = 'GENERATING CRYPTO KEYS & AUTHENTICATING...';
+            } else {
+                submitBtn.innerText = `WAKING UP CLOUD BACKEND (ATTEMPT ${attempt}/${maxRetries})... PLEASE WAIT`;
+            }
         }
+
+        try {
+            response = await fetch(API_BASE + endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: usernameInput, password: passwordInput })
+            });
+
+            if (response.ok) {
+                success = true;
+            } else {
+                const errText = await response.text();
+                throw new Error(errText || 'Authentication failed');
+            }
+        } catch (err) {
+            console.warn(`Auth attempt ${attempt} failed:`, err.message);
+
+            if (err.message.toLowerCase().includes('already taken') || err.message.toLowerCase().includes('invalid username')) {
+                // Application logic error - do not retry
+                if (errorEl) {
+                    errorEl.innerText = err.message.toUpperCase();
+                    errorEl.classList.remove('hidden');
+                }
+                break;
+            }
+
+            if (attempt < maxRetries) {
+                // Render container is sleeping - wait 3 seconds before next retry
+                await new Promise(r => setTimeout(r, 3000));
+            } else {
+                if (errorEl) {
+                    errorEl.innerHTML = `CANNOT CONNECT TO BACKEND AT <a href="${API_BASE}/health" target="_blank" style="color:var(--accent); text-decoration:underline;">${API_BASE}</a>. CLICK LINK TO WAKE UP RENDER CONTAINER.`;
+                    errorEl.classList.remove('hidden');
+                }
+            }
+        }
+    }
+
+    if (success && response) {
+        try {
+            const data = await response.json();
+            localStorage.setItem('vault_token', data.token);
+            localStorage.setItem('vault_username', data.username);
+            localStorage.setItem('vault_pubkey', data.publicKey);
+
+            checkAuthState();
+        } catch (e) {
+            console.error("JSON parse error:", e);
+        }
+    }
+
+    if (submitBtn) {
+        submitBtn.innerText = originalBtnText;
+        submitBtn.disabled = false;
     }
 }
 
