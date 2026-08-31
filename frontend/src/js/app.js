@@ -1,11 +1,7 @@
 // Main Frontend SPA Application Logic (Bold Typography System)
 
-// Default to relative /api for Vercel rewrite proxy, or direct backend URL
-let API_BASE = '/api';
-
-if (window.location.hostname.endsWith('onrender.com')) {
-    API_BASE = 'https://vaultx-backend.onrender.com/api';
-}
+// Direct production Render backend API URL
+const API_BASE = 'https://vaultx-backend-1.onrender.com/api';
 
 let authMode = 'login'; // 'login' or 'register'
 let selectedFile = null;
@@ -134,7 +130,7 @@ async function handleAuthSubmit(event) {
         if (errorEl) {
             let msg = err.message || 'Authentication error';
             if (msg.toLowerCase().includes('failed to fetch')) {
-                msg = `CANNOT CONNECT TO BACKEND SERVER. PLEASE ENSURE BACKEND IS RUNNING.`;
+                msg = `CANNOT CONNECT TO BACKEND SERVER AT ${API_BASE}. PLEASE ENSURE BACKEND IS RUNNING.`;
             }
             errorEl.innerText = msg.toUpperCase();
             errorEl.classList.remove('hidden');
