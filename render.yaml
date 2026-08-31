@@ -2,9 +2,9 @@ services:
   # Backend Web Service (Spring Boot 3 / Java 21 via Docker)
   - type: web
     name: vaultx-backend
-    env: docker
-    context: ./backend
-    dockerfilePath: ./Dockerfile
+    runtime: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
     plan: free
     envVars:
       - key: SPRING_DATASOURCE_URL
@@ -19,7 +19,7 @@ services:
   # Frontend Static Site
   - type: web
     name: vaultx-frontend
-    env: static
+    runtime: static
     buildCommand: ""
     staticPublishPath: ./frontend/src
     routes:
