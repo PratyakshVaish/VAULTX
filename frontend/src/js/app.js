@@ -1,40 +1,16 @@
 // Main Frontend SPA Application Logic (Bold Typography System)
 
-// Backend API target initialization
+// Default to relative /api for Vercel rewrite proxy, or direct backend URL
 let API_BASE = '/api';
 
 if (window.location.hostname.endsWith('onrender.com')) {
     API_BASE = 'https://vaultx-backend.onrender.com/api';
 }
 
-// Allow stored or custom API override
-const savedApi = localStorage.getItem('vault_api_base');
-if (savedApi) {
-    API_BASE = savedApi;
-}
-
-function setCustomApiUrl(val) {
-    if (val && val.trim()) {
-        let clean = val.trim().replace(/\/+$/, '');
-        if (!clean.endsWith('/api')) {
-            clean += '/api';
-        }
-        API_BASE = clean;
-        localStorage.setItem('vault_api_base', API_BASE);
-        console.log("Updated API Target:", API_BASE);
-        
-        // Instant visual feedback for custom API target setting
-        const input = document.getElementById('api-url-input');
-        if (input) input.value = API_BASE;
-    }
-}
-
 let authMode = 'login'; // 'login' or 'register'
 let selectedFile = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('api-url-input');
-    if (input) input.value = API_BASE;
     checkAuthState();
 });
 
@@ -109,10 +85,9 @@ function switchAuthTab(mode) {
     }
 }
 
-// Direct Auth Form Submission Handler with Automatic Render Free-Tier Wake-Up Retry Loop
-async function submitAuthForm() {
-    console.log("Auth Submit Triggered. Mode:", authMode, "Target URL:", API_BASE);
-
+// Handle Auth Form Submission
+async function handleAuthSubmit(event) {
+    event.preventDefault();
     const usernameInput = document.getElementById('auth-username').value.trim();
     const passwordInput = document.getElementById('auth-password').value.trim();
     const errorEl = document.getElementById('auth-error');
@@ -122,8 +97,6 @@ async function submitAuthForm() {
         if (errorEl) {
             errorEl.innerText = "PLEASE ENTER BOTH USERNAME AND PASSWORD.";
             errorEl.classList.remove('hidden');
-        } else {
-            alert("Please enter both username and password.");
         }
         return;
     }
@@ -131,82 +104,47 @@ async function submitAuthForm() {
     if (errorEl) errorEl.classList.add('hidden');
 
     const originalBtnText = submitBtn ? submitBtn.innerText : '';
+    if (submitBtn) {
+        submitBtn.innerText = 'GENERATING CRYPTO KEYS & AUTHENTICATING...';
+        submitBtn.disabled = true;
+    }
+
     const endpoint = authMode === 'register' ? '/auth/register' : '/auth/login';
 
-    const maxRetries = 4;
-    let attempt = 0;
-    let success = false;
-    let response = null;
+    try {
+        const response = await fetch(API_BASE + endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: usernameInput, password: passwordInput })
+        });
 
-    while (attempt < maxRetries && !success) {
-        attempt++;
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(errText || 'Authentication failed');
+        }
+
+        const data = await response.json();
+        localStorage.setItem('vault_token', data.token);
+        localStorage.setItem('vault_username', data.username);
+        localStorage.setItem('vault_pubkey', data.publicKey);
+
+        checkAuthState();
+    } catch (err) {
+        console.error("Auth Exception:", err);
+        if (errorEl) {
+            let msg = err.message || 'Authentication error';
+            if (msg.toLowerCase().includes('failed to fetch')) {
+                msg = `CANNOT CONNECT TO BACKEND SERVER. PLEASE ENSURE BACKEND IS RUNNING.`;
+            }
+            errorEl.innerText = msg.toUpperCase();
+            errorEl.classList.remove('hidden');
+        }
+    } finally {
         if (submitBtn) {
-            submitBtn.disabled = true;
-            if (attempt === 1) {
-                submitBtn.innerText = 'GENERATING CRYPTO KEYS & AUTHENTICATING...';
-            } else {
-                submitBtn.innerText = `WAKING UP CLOUD BACKEND (ATTEMPT ${attempt}/${maxRetries})... PLEASE WAIT`;
-            }
-        }
-
-        try {
-            response = await fetch(API_BASE + endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: usernameInput, password: passwordInput })
-            });
-
-            if (response.ok) {
-                success = true;
-            } else {
-                const errText = await response.text();
-                throw new Error(errText || 'Authentication failed');
-            }
-        } catch (err) {
-            console.warn(`Auth attempt ${attempt} failed:`, err.message);
-
-            if (err.message.toLowerCase().includes('already taken') || err.message.toLowerCase().includes('invalid username')) {
-                if (errorEl) {
-                    errorEl.innerText = err.message.toUpperCase();
-                    errorEl.classList.remove('hidden');
-                }
-                break;
-            }
-
-            if (attempt < maxRetries) {
-                await new Promise(r => setTimeout(r, 2500));
-            } else {
-                if (errorEl) {
-                    errorEl.innerHTML = `CANNOT CONNECT TO BACKEND AT <a href="${API_BASE}/health" target="_blank" style="color:var(--accent); text-decoration:underline;">${API_BASE}</a>. PLEASE VERIFY API ENDPOINT BELOW.`;
-                    errorEl.classList.remove('hidden');
-                }
-            }
+            submitBtn.innerText = originalBtnText;
+            submitBtn.disabled = false;
         }
     }
-
-    if (success && response) {
-        try {
-            const data = await response.json();
-            localStorage.setItem('vault_token', data.token);
-            localStorage.setItem('vault_username', data.username);
-            localStorage.setItem('vault_pubkey', data.publicKey);
-
-            checkAuthState();
-        } catch (e) {
-            console.error("JSON parse error:", e);
-        }
-    }
-
-    if (submitBtn) {
-        submitBtn.innerText = originalBtnText;
-        submitBtn.disabled = false;
-    }
-}
-
-// Backward compatibility wrapper
-function handleAuthSubmit(event) {
-    if (event) event.preventDefault();
-    submitAuthForm();
 }
 
 // Logout
