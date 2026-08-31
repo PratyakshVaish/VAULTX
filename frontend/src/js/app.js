@@ -1,14 +1,10 @@
 // Main Frontend SPA Application Logic (Bold Typography System)
 
-// Dynamic backend API URL resolution matching Render subdomains (e.g. vaultx-frontend-g0le -> vaultx-backend-g0le)
+// Backend API target initialization
 let API_BASE = '/api';
 
 if (window.location.hostname.endsWith('onrender.com')) {
-    const parts = window.location.hostname.split('.');
-    const hostSubdomain = parts[0];
-    const backendSubdomain = hostSubdomain.replace('frontend', 'backend');
-    API_BASE = `https://${backendSubdomain}.onrender.com/api`;
-    console.log("VaultX Dynamic Render API Target:", API_BASE);
+    API_BASE = 'https://vaultx-backend.onrender.com/api';
 }
 
 // Allow stored or custom API override
@@ -19,9 +15,17 @@ if (savedApi) {
 
 function setCustomApiUrl(val) {
     if (val && val.trim()) {
-        API_BASE = val.trim();
+        let clean = val.trim().replace(/\/+$/, '');
+        if (!clean.endsWith('/api')) {
+            clean += '/api';
+        }
+        API_BASE = clean;
         localStorage.setItem('vault_api_base', API_BASE);
         console.log("Updated API Target:", API_BASE);
+        
+        // Instant visual feedback for custom API target setting
+        const input = document.getElementById('api-url-input');
+        if (input) input.value = API_BASE;
     }
 }
 
@@ -129,7 +133,7 @@ async function submitAuthForm() {
     const originalBtnText = submitBtn ? submitBtn.innerText : '';
     const endpoint = authMode === 'register' ? '/auth/register' : '/auth/login';
 
-    const maxRetries = 5;
+    const maxRetries = 4;
     let attempt = 0;
     let success = false;
     let response = null;
@@ -162,7 +166,6 @@ async function submitAuthForm() {
             console.warn(`Auth attempt ${attempt} failed:`, err.message);
 
             if (err.message.toLowerCase().includes('already taken') || err.message.toLowerCase().includes('invalid username')) {
-                // Application logic error - do not retry
                 if (errorEl) {
                     errorEl.innerText = err.message.toUpperCase();
                     errorEl.classList.remove('hidden');
@@ -171,11 +174,10 @@ async function submitAuthForm() {
             }
 
             if (attempt < maxRetries) {
-                // Render container is sleeping - wait 3 seconds before next retry
-                await new Promise(r => setTimeout(r, 3000));
+                await new Promise(r => setTimeout(r, 2500));
             } else {
                 if (errorEl) {
-                    errorEl.innerHTML = `CANNOT CONNECT TO BACKEND AT <a href="${API_BASE}/health" target="_blank" style="color:var(--accent); text-decoration:underline;">${API_BASE}</a>. CLICK LINK TO WAKE UP RENDER CONTAINER.`;
+                    errorEl.innerHTML = `CANNOT CONNECT TO BACKEND AT <a href="${API_BASE}/health" target="_blank" style="color:var(--accent); text-decoration:underline;">${API_BASE}</a>. PLEASE VERIFY API ENDPOINT BELOW.`;
                     errorEl.classList.remove('hidden');
                 }
             }
