@@ -1,12 +1,43 @@
 // Main Frontend SPA Application Logic for User-to-User Encrypted File Transfer (Bold Typography System)
 
-const API_BASE = '/api';
-let authMode = 'login'; // 'login' or 'register'
-let selectedFile = null;
+// Determine API Base URL dynamically
+let API_BASE = '/api';
+
+// If running on Render static domain directly without proxy, detect backend service URL
+if (window.location.hostname.endsWith('onrender.com')) {
+    // Check if hosted under vaultx-frontend-xxxx.onrender.com -> construct vaultx-backend-xxxx.onrender.com
+    const parts = window.location.hostname.split('.');
+    const hostName = parts[0];
+    const backendHost = hostName.replace('frontend', 'backend');
+    
+    // Store primary API endpoint
+    window.RENDER_BACKEND_URL = `https://${backendHost}.onrender.com/api`;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Initial health check to verify backend connectivity
+    verifyBackendConnection();
     checkAuthState();
 });
+
+async function verifyBackendConnection() {
+    try {
+        let res = await fetch(API_BASE + '/health');
+        if (!res.ok && window.RENDER_BACKEND_URL) {
+            // Fallback to direct backend URL if Nginx proxy isn't routing
+            API_BASE = window.RENDER_BACKEND_URL;
+            res = await fetch(API_BASE + '/health');
+        }
+        if (res.ok) {
+            console.log("Connected to VaultX Backend API at:", API_BASE);
+        }
+    } catch (e) {
+        if (window.RENDER_BACKEND_URL) {
+            API_BASE = window.RENDER_BACKEND_URL;
+            console.log("Switching to direct backend URL:", API_BASE);
+        }
+    }
+}
 
 // Auth State Check
 function checkAuthState() {
