@@ -1,8 +1,8 @@
 services:
-  # Backend Web Service (Spring Boot 3 / Java 21 via Docker)
+  # Backend Docker Web Service
   - type: web
     name: vaultx-backend
-    runtime: docker
+    env: docker
     dockerContext: ./backend
     dockerfilePath: ./backend/Dockerfile
     plan: free
@@ -19,7 +19,7 @@ services:
   # Frontend Static Site
   - type: web
     name: vaultx-frontend
-    runtime: static
+    env: static
     buildCommand: ""
     staticPublishPath: ./frontend/src
     routes:
