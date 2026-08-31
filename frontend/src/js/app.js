@@ -1,43 +1,22 @@
-// Main Frontend SPA Application Logic for User-to-User Encrypted File Transfer (Bold Typography System)
+// Main Frontend SPA Application Logic (Bold Typography System)
 
-// Determine API Base URL dynamically
+// Synchronously compute backend API URL for Render or Localhost
 let API_BASE = '/api';
 
-// If running on Render static domain directly without proxy, detect backend service URL
 if (window.location.hostname.endsWith('onrender.com')) {
-    // Check if hosted under vaultx-frontend-xxxx.onrender.com -> construct vaultx-backend-xxxx.onrender.com
     const parts = window.location.hostname.split('.');
     const hostName = parts[0];
     const backendHost = hostName.replace('frontend', 'backend');
-    
-    // Store primary API endpoint
-    window.RENDER_BACKEND_URL = `https://${backendHost}.onrender.com/api`;
+    API_BASE = `https://${backendHost}.onrender.com/api`;
+    console.log("VaultX Render Backend Target:", API_BASE);
 }
+
+let authMode = 'login'; // 'login' or 'register'
+let selectedFile = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initial health check to verify backend connectivity
-    verifyBackendConnection();
     checkAuthState();
 });
-
-async function verifyBackendConnection() {
-    try {
-        let res = await fetch(API_BASE + '/health');
-        if (!res.ok && window.RENDER_BACKEND_URL) {
-            // Fallback to direct backend URL if Nginx proxy isn't routing
-            API_BASE = window.RENDER_BACKEND_URL;
-            res = await fetch(API_BASE + '/health');
-        }
-        if (res.ok) {
-            console.log("Connected to VaultX Backend API at:", API_BASE);
-        }
-    } catch (e) {
-        if (window.RENDER_BACKEND_URL) {
-            API_BASE = window.RENDER_BACKEND_URL;
-            console.log("Switching to direct backend URL:", API_BASE);
-        }
-    }
-}
 
 // Auth State Check
 function checkAuthState() {
@@ -116,8 +95,15 @@ async function handleAuthSubmit(event) {
     const usernameInput = document.getElementById('auth-username').value.trim();
     const passwordInput = document.getElementById('auth-password').value.trim();
     const errorEl = document.getElementById('auth-error');
+    const submitBtn = document.getElementById('auth-submit-btn');
 
-    errorEl.classList.add('hidden');
+    if (errorEl) errorEl.classList.add('hidden');
+
+    const originalBtnText = submitBtn ? submitBtn.innerText : '';
+    if (submitBtn) {
+        submitBtn.innerText = 'GENERATING CRYPTO KEYS & AUTHENTICATING...';
+        submitBtn.disabled = true;
+    }
 
     const endpoint = authMode === 'register' ? '/auth/register' : '/auth/login';
 
@@ -140,8 +126,17 @@ async function handleAuthSubmit(event) {
 
         checkAuthState();
     } catch (err) {
-        errorEl.innerText = err.message.toUpperCase();
-        errorEl.classList.remove('hidden');
+        if (errorEl) {
+            errorEl.innerText = (err.message || 'Authentication error').toUpperCase();
+            errorEl.classList.remove('hidden');
+        } else {
+            alert("Auth Error: " + err.message);
+        }
+    } finally {
+        if (submitBtn) {
+            submitBtn.innerText = originalBtnText;
+            submitBtn.disabled = false;
+        }
     }
 }
 
