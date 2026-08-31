@@ -8,9 +8,15 @@ services:
     plan: free
     envVars:
       - key: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://vaultx-db:5432/securefiledb
+      - key: SPRING_DATASOURCE_USERNAME
         fromDatabase:
           name: vaultx-db
-          property: connectionString
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: vaultx-db
+          property: password
       - key: FILE_UPLOAD_DIR
         value: /tmp/uploads
       - key: JWT_SECRET
