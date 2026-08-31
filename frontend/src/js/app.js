@@ -1,10 +1,14 @@
 // Main Frontend SPA Application Logic (Bold Typography System)
 
-// Backend API target initialization
+// Dynamic backend API URL resolution matching Render subdomains (e.g. vaultx-frontend-g0le -> vaultx-backend-g0le)
 let API_BASE = '/api';
 
 if (window.location.hostname.endsWith('onrender.com')) {
-    API_BASE = 'https://vaultx-backend.onrender.com/api';
+    const parts = window.location.hostname.split('.');
+    const hostSubdomain = parts[0];
+    const backendSubdomain = hostSubdomain.replace('frontend', 'backend');
+    API_BASE = `https://${backendSubdomain}.onrender.com/api`;
+    console.log("VaultX Dynamic Render API Target:", API_BASE);
 }
 
 // Allow stored or custom API override
@@ -153,7 +157,7 @@ async function submitAuthForm() {
         if (errorEl) {
             let msg = err.message || 'Authentication error';
             if (msg.toLowerCase().includes('failed to fetch')) {
-                msg = `CANNOT CONNECT TO ${API_BASE}. PLEASE RE-TRY IN 15 SECONDS WHILE RENDER WAKES UP.`;
+                msg = `CANNOT CONNECT TO BACKEND AT ${API_BASE}. PLEASE OPEN ${API_BASE}/health IN YOUR BROWSER ONCE TO WAKE IT UP.`;
             }
             errorEl.innerText = msg.toUpperCase();
             errorEl.classList.remove('hidden');
